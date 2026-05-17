@@ -176,6 +176,7 @@ export default function VaultScreen() {
   // Local UI States
   const [selectedCategory, setSelectedCategory] = useState('all'); // all, password, card, document, archived
   const [searchQuery, setSearchQuery] = useState('');
+  const [isTableVerified, setIsTableVerified] = useState(false);
   
   // Modal Controllers
   const [showFABSheet, setShowFABSheet] = useState(false);
@@ -200,6 +201,7 @@ export default function VaultScreen() {
       if (!supabase) return [];
       const { data, error } = await supabase
         .from('vault_entries')
+        .select('*')
         .eq('is_deleted', false)
         .order('updated_at', { ascending: false });
 
@@ -502,7 +504,7 @@ export default function VaultScreen() {
         <View style={styles.loader}>
           <ActivityIndicator color="#0A84FF" size="large" />
         </View>
-      ) : error && (error.code === 'PGRST205' || String(error.message).includes('vault_entries')) ? (
+      ) : error && !isTableVerified && (error.code === 'PGRST205' || String(error.message).includes('vault_entries')) ? (
         <View style={styles.errorContainer}>
           <ThemedText style={styles.errorIcon}>⚠️</ThemedText>
           <ThemedText type="title" style={styles.errorTitle}>
@@ -550,8 +552,10 @@ export default function VaultScreen() {
                   showToast(`Connection error: ${testError.message}`, 'error');
                 } else {
                   showToast('Database table verified and synced!', 'success');
-                  // Reset query state immediately to clear the table error and show the loader
-                  queryClient.resetQueries({ queryKey: ['vault_entries'] });
+                  setIsTableVerified(true); // Set table as verified so the warning screen is permanently disabled
+                  // Immediately seed an empty array to clear the error state and show the welcoming empty state instantly
+                  queryClient.setQueryData(['vault_entries'], []);
+                  queryClient.invalidateQueries({ queryKey: ['vault_entries'] });
                 }
               } catch (err) {
                 console.error('Verification query failed:', err);
@@ -585,12 +589,12 @@ export default function VaultScreen() {
         </View>
       ) : filteredEntries.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <ThemedText style={styles.emptyIcon}>📂</ThemedText>
+          <ThemedText style={styles.emptyIcon}>✨</ThemedText>
           <ThemedText type="title" style={styles.emptyTitle}>
-            No entries found
+            Your Vault is Ready!
           </ThemedText>
           <ThemedText type="small" style={styles.emptySubtitle}>
-            Configure entries in your personal supabase database.
+            Your zero-knowledge encrypted database is connected. Tap the "+" button in the corner to secure your first password, card, or document!
           </ThemedText>
         </View>
       ) : (
