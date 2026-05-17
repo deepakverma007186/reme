@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { createClient } from '@supabase/supabase-js';
 import { useAppStore } from '../../store/appStore';
 import { ThemedText } from '../../components/themed-text';
@@ -23,6 +24,36 @@ export default function SetupScreen() {
   const [anonKey, setAnonKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState('');
+
+  const handlePasteUrl = async () => {
+    try {
+      const text = await Clipboard.getStringAsync();
+      if (text) {
+        setUrl(text.trim());
+        showToast('URL pasted from clipboard', 'success');
+      } else {
+        showToast('Clipboard is empty', 'info');
+      }
+    } catch (e) {
+      console.error('Failed to paste URL:', e);
+      showToast('Failed to paste URL', 'error');
+    }
+  };
+
+  const handlePasteAnonKey = async () => {
+    try {
+      const text = await Clipboard.getStringAsync();
+      if (text) {
+        setAnonKey(text.trim());
+        showToast('Anon Key pasted from clipboard', 'success');
+      } else {
+        showToast('Clipboard is empty', 'info');
+      }
+    } catch (e) {
+      console.error('Failed to paste Anon Key:', e);
+      showToast('Failed to paste Anon Key', 'error');
+    }
+  };
 
   const handleConnect = async () => {
     setErrorText('');
@@ -92,9 +123,16 @@ export default function SetupScreen() {
 
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <ThemedText type="smallBold" style={styles.label}>
-                SUPABASE PROJECT URL
-              </ThemedText>
+              <View style={styles.labelRow}>
+                <ThemedText type="smallBold" style={styles.label}>
+                  SUPABASE PROJECT URL
+                </ThemedText>
+                <TouchableOpacity onPress={handlePasteUrl} style={styles.pasteButton}>
+                  <ThemedText type="smallBold" style={styles.pasteButtonText}>
+                    📋 Paste
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
               <TextInput
                 style={styles.input}
                 placeholder="https://your-project.supabase.co"
@@ -108,9 +146,16 @@ export default function SetupScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <ThemedText type="smallBold" style={styles.label}>
-                SUPABASE API ANON KEY
-              </ThemedText>
+              <View style={styles.labelRow}>
+                <ThemedText type="smallBold" style={styles.label}>
+                  SUPABASE API ANON KEY
+                </ThemedText>
+                <TouchableOpacity onPress={handlePasteAnonKey} style={styles.pasteButton}>
+                  <ThemedText type="smallBold" style={styles.pasteButtonText}>
+                    📋 Paste
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -121,6 +166,7 @@ export default function SetupScreen() {
                 autoCorrect={false}
                 multiline={true}
                 numberOfLines={3}
+                scrollEnabled={false}
               />
             </View>
 
@@ -213,9 +259,26 @@ const styles = StyleSheet.create({
   inputGroup: {
     marginBottom: Spacing.three,
   },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.one,
+  },
+  pasteButton: {
+    backgroundColor: '#1C1C1E',
+    borderWidth: 1,
+    borderColor: '#2E3135',
+    borderRadius: Spacing.one - 2,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: 3,
+  },
+  pasteButtonText: {
+    color: '#0A84FF',
+    fontSize: 10,
+  },
   label: {
     color: '#B0B4BA',
-    marginBottom: Spacing.one,
     fontSize: 12,
   },
   input: {

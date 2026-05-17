@@ -813,6 +813,7 @@ export default function VaultScreen() {
                   placeholderTextColor="#60646C"
                   multiline={true}
                   numberOfLines={4}
+                  scrollEnabled={false}
                 />
               </View>
 

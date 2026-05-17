@@ -92,7 +92,7 @@ export default function UnlockScreen() {
       return;
     }
 
-    if (!user || !verifyHash) {
+    if (!user || !user.email || !verifyHash) {
       setErrorText('Security verification metadata not found. Try logging out and signing up again.');
       return;
     }
@@ -102,8 +102,8 @@ export default function UnlockScreen() {
     // Give UI a millisecond to render spinner before heavy PBKDF2 calculation
     setTimeout(() => {
       try {
-        // Derive key using typed Master Password and User's unique UUID
-        const derivedHex = deriveKey(cleanPass, user.id);
+        // Derive key using typed Master Password and User's unique Email
+        const derivedHex = deriveKey(cleanPass, user.email);
 
         // Decrypt the verification hash stored in Supabase metadata
         const decryptedStr = decryptData(verifyHash, derivedHex);

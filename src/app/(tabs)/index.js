@@ -1,22 +1,23 @@
-import React, { useState, useMemo } from 'react';
-import {
-  StyleSheet,
-  View,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-  ActivityIndicator,
-} from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
+import React, { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import { useAppStore } from '../../store/appStore';
-import { getCachedSupabaseClient } from '../../services/supabase';
-import { decryptEntry } from '../../encryption/crypto';
+import { Spacing } from '@/constants/theme';
 import { ThemedText } from '../../components/themed-text';
 import { ThemedView } from '../../components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { decryptEntry } from '../../encryption/crypto';
+import { getCachedSupabaseClient } from '../../services/supabase';
+import { useAppStore } from '../../store/appStore';
 
 export default function HomeScreen() {
   const masterKey = useAppStore((state) => state.masterKey);

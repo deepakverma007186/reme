@@ -141,7 +141,7 @@ export default function ControlScreen() {
       return;
     }
 
-    if (!user || !verifyHash) {
+    if (!user || !user.email || !verifyHash) {
       setMigrationError('Security verification metadata not found.');
       return;
     }
@@ -154,7 +154,7 @@ export default function ControlScreen() {
         const supabase = getCachedSupabaseClient();
 
         // 1. Verify current password
-        const oldDerivedKey = deriveKey(cleanCurrent, user.id);
+        const oldDerivedKey = deriveKey(cleanCurrent, user.email);
         const decryptedVerify = decryptData(verifyHash, oldDerivedKey);
 
         if (decryptedVerify !== 'ReMe-Verify') {
@@ -181,7 +181,7 @@ export default function ControlScreen() {
         if (fetchError) throw fetchError;
 
         // 4. Decrypt and re-encrypt every entry
-        const newDerivedKey = deriveKey(cleanNew, user.id);
+        const newDerivedKey = deriveKey(cleanNew, user.email);
         const migrationPromises = entries.map(async (entry) => {
           // Decrypt sensitive fields using old key
           const decrypted = decryptEntry(entry, oldDerivedKey);

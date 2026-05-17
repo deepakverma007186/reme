@@ -18,6 +18,7 @@ import { Spacing } from '@/constants/theme';
 
 export default function AuthScreen() {
   const showToast = useAppStore((state) => state.showToast);
+  const unlockVault = useAppStore((state) => state.unlockVault);
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -70,30 +71,39 @@ export default function AuthScreen() {
         }
 
         if (cleanMaster === confirmMasterPassword.trim()) {
-          // Perform Sign Up in Supabase Auth
+          // Derive encryption key and create the verification hash using email as salt
+          const derivedHex = deriveKey(cleanMaster, cleanEmail);
+          const verifyHash = encryptData('ReMe-Verify', derivedHex);
+
+          // Perform Sign Up in Supabase Auth, passing the verifyHash directly in options.data
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email: cleanEmail,
             password: cleanPass,
+            options: {
+              data: { reme_verify: verifyHash },
+            },
           });
 
           if (signUpError) throw signUpError;
           if (!signUpData.user) throw new Error('Account creation failed.');
 
-          // User successfully created!
-          const userId = signUpData.user.id;
-          
-          // Derive encryption key and create the verification hash
-          const derivedHex = deriveKey(cleanMaster, userId);
-          const verifyHash = encryptData('ReMe-Verify', derivedHex);
+          // Reset the password fields immediately for security
+          setPassword('');
+          setConfirmPassword('');
+          setMasterPassword('');
+          setConfirmMasterPassword('');
 
-          // Update user metadata in Supabase with verification ciphertext
-          const { error: updateError } = await supabase.auth.updateUser({
-            data: { reme_verify: verifyHash },
-          });
-
-          if (updateError) throw updateError;
-          
-          showToast('Account created successfully!', 'success');
+          if (signUpData.session) {
+            // Email auto-confirm is active -> User is immediately logged in
+            // Unlock the vault using the derived key so they seamlessly go to (tabs)
+            unlockVault(derivedHex);
+            setEmail(''); // Clear email too since they are logged in
+            showToast('Account created and vault unlocked!', 'success');
+          } else {
+            // Email confirmation is required -> They must verify their email first
+            showToast('Account created! Please check your email to verify your account.', 'info');
+            setIsSignUp(false); // Toggle to Sign In screen
+          }
         } else {
           setErrorText('Master Passwords do not match.');
         }
@@ -105,6 +115,10 @@ export default function AuthScreen() {
         });
 
         if (loginError) throw loginError;
+        
+        // Reset the form on successful login
+        setEmail('');
+        setPassword('');
         showToast('Logged in successfully', 'success');
       }
     } catch (e) {
