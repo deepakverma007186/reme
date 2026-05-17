@@ -23,9 +23,6 @@ export default function HomeScreen() {
   const masterKey = useAppStore((state) => state.masterKey);
   const showToast = useAppStore((state) => state.showToast);
 
-  // Search input state
-  const [searchQuery, setSearchQuery] = useState('');
-
   // Password Generator State
   const [length, setLength] = useState(16);
   const [useUppercase, setUseUppercase] = useState(true);
@@ -67,16 +64,7 @@ export default function HomeScreen() {
     return counts;
   }, [decryptedEntries]);
 
-  // Local Search: filters locally decrypted records by metadata (title / type)
-  const filteredEntries = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return [];
-    return decryptedEntries.filter(
-      (entry) =>
-        entry.title.toLowerCase().includes(query) ||
-        entry.entry_type.toLowerCase().includes(query)
-    );
-  }, [decryptedEntries, searchQuery]);
+
 
   // Local Password Generator logic
   const generatePassword = () => {
@@ -166,61 +154,7 @@ export default function HomeScreen() {
           </ThemedText>
         </View>
 
-        {/* Global Search Bar */}
-        <View style={styles.searchSection}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by title or category..."
-            placeholderTextColor="#60646C"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCorrect={false}
-          />
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearch}>
-              <ThemedText style={{ color: '#B0B4BA' }}>✕</ThemedText>
-            </TouchableOpacity>
-          ) : null}
-        </View>
 
-        {/* Search Results Display */}
-        {searchQuery ? (
-          <View style={styles.searchResultsContainer}>
-            <ThemedText type="smallBold" style={styles.sectionLabel}>
-              SEARCH RESULTS ({filteredEntries.length})
-            </ThemedText>
-            {filteredEntries.length === 0 ? (
-              <View style={styles.emptySearch}>
-                <ThemedText type="small" style={styles.emptyText}>
-                  No matching entries found.
-                </ThemedText>
-              </View>
-            ) : (
-              filteredEntries.map((entry) => (
-                <View key={entry.id} style={styles.searchRow}>
-                  <View style={styles.searchRowLeft}>
-                    <ThemedText style={styles.searchRowIcon}>
-                      {entry.entry_type === 'password' ? '🔑' : entry.entry_type === 'card' ? '💳' : '📄'}
-                    </ThemedText>
-                    <View>
-                      <ThemedText type="smallBold" style={styles.searchRowTitle}>
-                        {entry.title}
-                      </ThemedText>
-                      <ThemedText type="small" style={styles.searchRowSub}>
-                        {entry.entry_type.toUpperCase()}
-                      </ThemedText>
-                    </View>
-                  </View>
-                  {entry.is_archived && (
-                    <ThemedText type="small" style={styles.archivedBadge}>
-                      ARCHIVED
-                    </ThemedText>
-                  )}
-                </View>
-              ))
-            )}
-          </View>
-        ) : null}
 
         {/* Vault Summary Stats */}
         <View style={styles.statsContainer}>
@@ -395,76 +329,11 @@ const styles = StyleSheet.create({
   subtitle: {
     color: '#60646C',
   },
-  searchSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1C1C1E',
-    borderRadius: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    marginBottom: Spacing.four,
-    borderWidth: 1,
-    borderColor: '#2E3135',
-  },
-  searchInput: {
-    flex: 1,
-    color: '#FFFFFF',
-    paddingVertical: Spacing.two + 2,
-    fontSize: 15,
-  },
-  clearSearch: {
-    padding: Spacing.one,
-  },
   sectionLabel: {
     color: '#B0B4BA',
     fontSize: 11,
     letterSpacing: 0.5,
     marginBottom: Spacing.two,
-  },
-  searchResultsContainer: {
-    marginBottom: Spacing.four,
-    backgroundColor: '#0C0C0E',
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
-    borderWidth: 1,
-    borderColor: '#1C1C1E',
-  },
-  emptySearch: {
-    paddingVertical: Spacing.two,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: '#60646C',
-  },
-  searchRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: Spacing.two,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1C1C1E',
-  },
-  searchRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  searchRowIcon: {
-    fontSize: 20,
-    marginRight: Spacing.two,
-  },
-  searchRowTitle: {
-    color: '#FFFFFF',
-  },
-  searchRowSub: {
-    color: '#60646C',
-    fontSize: 10,
-  },
-  archivedBadge: {
-    backgroundColor: '#2E3135',
-    color: '#B0B4BA',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.half,
-    borderRadius: Spacing.one,
-    fontSize: 10,
   },
   statsContainer: {
     marginBottom: Spacing.four,

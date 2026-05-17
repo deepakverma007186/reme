@@ -1,5 +1,5 @@
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Spacing } from '@/constants/theme';
 import { ThemedText } from '../themed-text';
 
@@ -32,7 +32,7 @@ export default function VaultEntryCard({ item, onPress, onDelete, onArchive, swi
   };
 
   return (
-    <Swipeable
+    <ReanimatedSwipeable
       ref={swipeRef}
       renderLeftActions={renderLeftActions}
       renderRightActions={renderRightActions}
@@ -66,7 +66,7 @@ export default function VaultEntryCard({ item, onPress, onDelete, onArchive, swi
           </View>
         )}
       </TouchableOpacity>
-    </Swipeable>
+    </ReanimatedSwipeable>
   );
 }
 
