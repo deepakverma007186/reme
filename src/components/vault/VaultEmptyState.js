@@ -1,11 +1,11 @@
-import { View, StyleSheet } from 'react-native';
 import { Spacing } from '@/constants/theme';
+import { StyleSheet, Text, View } from 'react-native';
 import { ThemedText } from '../themed-text';
 
 export default function VaultEmptyState() {
   return (
     <View style={styles.emptyContainer}>
-      <ThemedText style={styles.emptyIcon}>✨</ThemedText>
+      <Text style={styles.emptyIcon}>✨</Text>
       <ThemedText type="title" style={styles.emptyTitle}>
         Your Vault is Ready!
       </ThemedText>
@@ -24,8 +24,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.six,
   },
   emptyIcon: {
-    fontSize: 64,
-    marginBottom: Spacing.three,
+    fontSize: 34,
   },
   emptyTitle: {
     color: '#FFFFFF',

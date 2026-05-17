@@ -40,7 +40,7 @@ export default function VaultFormModal({
       onRequestClose={onClose}
     >
       <ThemedView style={styles.formContainer}>
-        <SafeAreaView style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={{ flex: 1 }}
