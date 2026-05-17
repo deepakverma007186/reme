@@ -266,7 +266,7 @@ export default function VaultScreen() {
       } else {
         const { error } = await supabase
           .from('vault_entries')
-          .insert({ ...encryptedPayload, user_id: supabase.auth.user?.id });
+          .insert({ ...encryptedPayload, user_id: useAppStore.getState().session?.user?.id });
         if (error) throw error;
       }
     },
@@ -713,8 +713,12 @@ export default function VaultScreen() {
               <ThemedText type="smallBold" style={styles.navTitle}>
                 {editEntryId ? 'EDIT RECORD' : `NEW ${formType?.toUpperCase()}`}
               </ThemedText>
-              <TouchableOpacity onPress={handleSaveForm}>
-                <ThemedText type="smallBold" style={styles.navSaveBtn}>Save</ThemedText>
+              <TouchableOpacity onPress={handleSaveForm} disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? (
+                  <ActivityIndicator color="#0A84FF" size="small" />
+                ) : (
+                  <ThemedText type="smallBold" style={styles.navSaveBtn}>Save</ThemedText>
+                )}
               </TouchableOpacity>
             </View>
 
