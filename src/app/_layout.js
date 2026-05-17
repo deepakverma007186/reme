@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme, AppState } from 'react-native';
 import { ThemeProvider, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import * as ScreenCapture from 'expo-screen-capture';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useAppStore } from '../store/appStore';
 import { getCachedSupabaseClient } from '../services/supabase';
@@ -26,15 +27,17 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <SafeAreaProvider>
-          <AppContent />
-          <Toast />
-          <StatusBar style="auto" />
-        </SafeAreaProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <SafeAreaProvider>
+            <AppContent />
+            <Toast />
+            <StatusBar style="auto" />
+          </SafeAreaProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
 
