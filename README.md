@@ -1,43 +1,14 @@
 # ReMe 🔐 • Zero-Knowledge, BYOB Encrypted Password Vault
 
-[![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android%20%7C%20Web-blueviolet?style=for-the-badge&logo=react)](https://expo.dev)
+[![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android%20-blueviolet?style=for-the-badge&logo=react)](https://expo.dev)
 [![Architecture](https://img.shields.io/badge/Architecture-Zero--Knowledge-success?style=for-the-badge&logo=security)](https://en.wikipedia.org/wiki/Zero-knowledge_proof)
 [![Backend](https://img.shields.io/badge/Backend-Supabase%20%28BYOB%29-emerald?style=for-the-badge&logo=supabase)](https://supabase.com)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
 
 **ReMe** (pronounced *"Remember Me"*) is a production-grade, highly secure, **Zero-Knowledge End-to-End Encrypted (E2EE)** password and credential vault. Designed with a **"Bring Your Own Backend" (BYOB)** philosophy, ReMe gives users absolute ownership of their digital secrets. By inputting their own Supabase infrastructure keys, users establish a completely isolated, private database where all sensitive records are encrypted client-side using industry-standard military-grade cryptography before ever reaching the cloud.
 
 ---
 
 ## 🚀 Key Engineering Achievements & Security Architecture
-
-This application is built from the ground up prioritizing mathematical security, local-first performance, and flawless UX. Below is the blueprint of the security protocols implemented:
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                              CLIENT DEVICE                             │
-│                                                                        │
-│  [Master Password] + [Supabase User UUID]                              │
-│         │                                                              │
-│         ▼                                                              │
-│    PBKDF2-SHA256 (10,000 Iterations) ──► In-Memory 256-bit AES Key     │
-│                                                     │                  │
-│  ┌──────────────────────────────────────────────────┼───────────────┐  │
-│  │ Encrypt Operations                               ▼               │  │
-│  │ [Plaintext Fields] ──► AES-256-CBC (Random IV) ──► iv:ciphertext │  │
-│  └──────────────────────────────────────────────────────────┬───────┘  │
-└─────────────────────────────────────────────────────────────┼──────────┘
-                                                              ▼
-                                                   [HTTPS / TLS Tunnel]
-                                                              │
-                                                              ▼
-                                                 ┌──────────────────────┐
-                                                 │   SUPABASE CLOUD     │
-                                                 │                      │
-                                                 │  (Only sees Hex hash │
-                                                 │   & ciphertexts)     │
-                                                 └──────────────────────┘
-```
 
 ### 1. Zero-Knowledge Key Derivation (PBKDF2-SHA256)
 *   **The Problem:** Storing plain-text master passwords or weak hashes on a server makes them vulnerable to leaks and brute-force attacks.
