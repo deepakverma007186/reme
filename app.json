@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "reme",
+    "name": "ReMe",
     "slug": "reme",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,16 +8,10 @@
     "scheme": "reme",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.reme.app"
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
       "predictiveBackGestureEnabled": false,
       "package": "com.reme.app"
     },
