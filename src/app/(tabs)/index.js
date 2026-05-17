@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
+import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -22,6 +23,13 @@ import { useAppStore } from '../../store/appStore';
 export default function HomeScreen() {
   const masterKey = useAppStore((state) => state.masterKey);
   const showToast = useAppStore((state) => state.showToast);
+
+  const handleNavigateToVault = (category) => {
+    router.push({
+      pathname: '/vault',
+      params: { category },
+    });
+  };
 
   // Password Generator State
   const [length, setLength] = useState(16);
@@ -165,7 +173,11 @@ export default function HomeScreen() {
             <ActivityIndicator size="small" color="#0A84FF" />
           ) : (
             <View style={styles.statsRow}>
-              <View style={styles.statCard}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.statCard}
+                onPress={() => handleNavigateToVault('password')}
+              >
                 <ThemedText style={styles.statIcon}>🔑</ThemedText>
                 <ThemedText type="title" style={styles.statCount}>
                   {stats.password}
@@ -173,9 +185,13 @@ export default function HomeScreen() {
                 <ThemedText type="small" style={styles.statLabel}>
                   Passwords
                 </ThemedText>
-              </View>
+              </TouchableOpacity>
 
-              <View style={styles.statCard}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.statCard}
+                onPress={() => handleNavigateToVault('card')}
+              >
                 <ThemedText style={styles.statIcon}>💳</ThemedText>
                 <ThemedText type="title" style={styles.statCount}>
                   {stats.card}
@@ -183,9 +199,13 @@ export default function HomeScreen() {
                 <ThemedText type="small" style={styles.statLabel}>
                   Cards
                 </ThemedText>
-              </View>
+              </TouchableOpacity>
 
-              <View style={styles.statCard}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.statCard}
+                onPress={() => handleNavigateToVault('document')}
+              >
                 <ThemedText style={styles.statIcon}>📄</ThemedText>
                 <ThemedText type="title" style={styles.statCount}>
                   {stats.document}
@@ -193,7 +213,7 @@ export default function HomeScreen() {
                 <ThemedText type="small" style={styles.statLabel}>
                   Documents
                 </ThemedText>
-              </View>
+              </TouchableOpacity>
             </View>
           )}
         </View>

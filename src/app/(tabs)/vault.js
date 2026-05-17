@@ -1,7 +1,8 @@
 import { FlashList } from '@shopify/flash-list';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
-import { useMemo, useRef, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -37,6 +38,7 @@ import VaultFormModal from '../../components/vault/VaultFormModal';
 
 export default function VaultScreen() {
   const queryClient = useQueryClient();
+  const { category } = useLocalSearchParams();
   
   // Zustand State
   const masterKey = useAppStore((state) => state.masterKey);
@@ -50,6 +52,13 @@ export default function VaultScreen() {
   // Modal Controllers
   const [showFABSheet, setShowFABSheet] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
+
+  // Sync category parameter from route navigation
+  useEffect(() => {
+    if (category && ['all', 'password', 'card', 'document', 'archived'].includes(category)) {
+      setSelectedCategory(category);
+    }
+  }, [category]);
   
   // Form State
   const [formType, setFormType] = useState(null); // password, card, document
