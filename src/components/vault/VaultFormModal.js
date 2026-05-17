@@ -1,15 +1,16 @@
-import {
-  View,
-  TouchableOpacity,
-  Modal,
-  TextInput,
-  ScrollView,
-  KeyboardAvoidingView,
-  ActivityIndicator,
-  Platform,
-  StyleSheet,
-} from 'react-native';
 import { Spacing } from '@/constants/theme';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
 
@@ -37,27 +38,28 @@ export default function VaultFormModal({
       onRequestClose={onClose}
     >
       <ThemedView style={styles.formContainer}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
-          <View style={styles.formNavbar}>
-            <TouchableOpacity onPress={onClose}>
-              <ThemedText type="smallBold" style={styles.navCloseBtn}>Cancel</ThemedText>
-            </TouchableOpacity>
-            <ThemedText type="smallBold" style={styles.navTitle}>
-              {editEntryId ? 'EDIT RECORD' : `NEW ${formType?.toUpperCase()}`}
-            </ThemedText>
-            <TouchableOpacity onPress={onSave} disabled={isPending}>
-              {isPending ? (
-                <ActivityIndicator color="#0A84FF" size="small" />
-              ) : (
-                <ThemedText type="smallBold" style={styles.navSaveBtn}>Save</ThemedText>
-              )}
-            </TouchableOpacity>
-          </View>
+        <SafeAreaView style={{ flex: 1 }}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1 }}
+          >
+            <View style={styles.formNavbar}>
+              <TouchableOpacity onPress={onClose}>
+                <ThemedText type="smallBold" style={styles.navCloseBtn}>Cancel</ThemedText>
+              </TouchableOpacity>
+              <ThemedText type="smallBold" style={styles.navTitle}>
+                {editEntryId ? 'EDIT RECORD' : `NEW ${formType?.toUpperCase()}`}
+              </ThemedText>
+              <TouchableOpacity onPress={onSave} disabled={isPending}>
+                {isPending ? (
+                  <ActivityIndicator color="#0A84FF" size="small" />
+                ) : (
+                  <ThemedText type="smallBold" style={styles.navSaveBtn}>Save</ThemedText>
+                )}
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView contentContainerStyle={styles.formScroll} keyboardShouldPersistTaps="handled">
+            <ScrollView contentContainerStyle={styles.formScroll} keyboardShouldPersistTaps="handled">
             {/* Form Title (Common for all types) */}
             <View style={styles.formInputGroup}>
               <ThemedText type="smallBold" style={styles.formLabel}>RECORD TITLE</ThemedText>
@@ -346,8 +348,9 @@ export default function VaultFormModal({
             )}
           </ScrollView>
         </KeyboardAvoidingView>
-      </ThemedView>
-    </Modal>
+      </SafeAreaView>
+    </ThemedView>
+  </Modal>
   );
 }
 
