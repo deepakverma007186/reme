@@ -1,17 +1,17 @@
-import React, { useEffect } from 'react';
-import { Slot, useRouter, useSegments } from 'expo-router';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StatusBar } from 'expo-status-bar';
-import { useColorScheme, AppState } from 'react-native';
-import { ThemeProvider, DarkTheme, DefaultTheme } from '@react-navigation/native';
+import { Slot, useRouter, useSegments } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import { AppState, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-import { useAppStore } from '../store/appStore';
-import { getCachedSupabaseClient } from '../services/supabase';
-import { Toast } from '../components/toast';
 import { AnimatedSplashOverlay } from '../components/animated-icon';
+import { Toast } from '../components/toast';
+import { getCachedSupabaseClient } from '../services/supabase';
+import { useAppStore } from '../store/appStore';
 
 // Create a singleton instance of QueryClient
 const queryClient = new QueryClient({
@@ -145,7 +145,9 @@ function AppContent() {
   return (
     <>
       <AnimatedSplashOverlay />
-      <Slot />
+      <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+        <Slot />
+      </SafeAreaView>
     </>
   );
 }
