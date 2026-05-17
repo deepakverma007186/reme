@@ -21,20 +21,20 @@ import { useAppStore } from '../../store/appStore';
 // Sub-components & helpers
 import {
   SQL_SCHEMA,
-  passwordSchema,
   cardSchema,
-  docSchema,
-  formatCardNumber,
-  formatCardExpiry,
   checkOnline,
+  docSchema,
+  formatCardExpiry,
+  formatCardNumber,
+  passwordSchema,
 } from '../../components/vault/vault-constants';
-import VaultHeader from '../../components/vault/VaultHeader';
 import VaultCategoryTabs from '../../components/vault/VaultCategoryTabs';
 import VaultEmptyState from '../../components/vault/VaultEmptyState';
+import VaultEntryCard from '../../components/vault/VaultEntryCard';
 import VaultErrorState from '../../components/vault/VaultErrorState';
 import VaultFABSheet from '../../components/vault/VaultFABSheet';
-import VaultEntryCard from '../../components/vault/VaultEntryCard';
 import VaultFormModal from '../../components/vault/VaultFormModal';
+import VaultHeader from '../../components/vault/VaultHeader';
 
 export default function VaultScreen() {
   const queryClient = useQueryClient();
@@ -67,6 +67,7 @@ export default function VaultScreen() {
   const [formErrors, setFormErrors] = useState({});
   const [isSecurePass, setIsSecurePass] = useState(true);
   const [isSecureCVV, setIsSecureCVV] = useState(true);
+  const [isSecurePIN, setIsSecurePIN] = useState(true);
 
   // Reference trackers for closing swiped rows
   const swipeableRefs = useRef(new Map());
@@ -199,6 +200,7 @@ export default function VaultScreen() {
     setEditEntryId(null);
     setIsSecurePass(true);
     setIsSecureCVV(true);
+    setIsSecurePIN(true);
   };
 
   const handleOpenCreateForm = (type) => {
@@ -386,6 +388,7 @@ export default function VaultScreen() {
           data={filteredEntries}
           estimatedItemSize={72}
           keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <VaultEntryCard
               item={item}
@@ -423,8 +426,10 @@ export default function VaultScreen() {
         isPending={saveMutation.isPending}
         isSecurePass={isSecurePass}
         isSecureCVV={isSecureCVV}
+        isSecurePIN={isSecurePIN}
         setIsSecurePass={setIsSecurePass}
         setIsSecureCVV={setIsSecureCVV}
+        setIsSecurePIN={setIsSecurePIN}
         onChangeField={handleFieldChange}
         onClose={() => setShowFormModal(false)}
         onSave={handleSaveForm}

@@ -23,8 +23,10 @@ export default function VaultFormModal({
   isPending,
   isSecurePass,
   isSecureCVV,
+  isSecurePIN,
   setIsSecurePass,
   setIsSecureCVV,
+  setIsSecurePIN,
   onChangeField,
   onClose,
   onSave,
@@ -59,7 +61,7 @@ export default function VaultFormModal({
               </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={styles.formScroll} keyboardShouldPersistTaps="handled">
+            <ScrollView contentContainerStyle={styles.formScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {/* Form Title (Common for all types) */}
             <View style={styles.formInputGroup}>
               <ThemedText type="smallBold" style={styles.formLabel}>RECORD TITLE</ThemedText>
@@ -239,16 +241,24 @@ export default function VaultFormModal({
 
                 <View style={styles.formInputGroup}>
                   <ThemedText type="smallBold" style={styles.formLabel}>CARD PIN (OPTIONAL)</ThemedText>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formData.card_pin || ''}
-                    onChangeText={(val) => onChangeField('card_pin', val)}
-                    placeholder="PIN code"
-                    placeholderTextColor="#60646C"
-                    keyboardType="numeric"
-                    secureTextEntry
-                    maxLength={6}
-                  />
+                  <View style={styles.secureInputWrapper}>
+                    <TextInput
+                      style={styles.secureTextInput}
+                      value={formData.card_pin || ''}
+                      onChangeText={(val) => onChangeField('card_pin', val)}
+                      secureTextEntry={isSecurePIN}
+                      placeholder="PIN code"
+                      placeholderTextColor="#60646C"
+                      keyboardType="numeric"
+                      maxLength={6}
+                    />
+                    <TouchableOpacity
+                      style={styles.secureToggle}
+                      onPress={() => setIsSecurePIN(!isSecurePIN)}
+                    >
+                      <ThemedText style={{ fontSize: 16 }}>{isSecurePIN ? '👁️' : '🕶️'}</ThemedText>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </>
             )}

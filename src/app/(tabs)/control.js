@@ -1,23 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  ActivityIndicator,
-  Switch,
-  Modal,
-  TextInput,
-  ScrollView,
-  Platform,
-  Alert,
-} from 'react-native';
+import { Spacing } from '@/constants/theme';
 import * as SecureStore from 'expo-secure-store';
-import { getCachedSupabaseClient } from '../../services/supabase';
-import { useAppStore } from '../../store/appStore';
-import { deriveKey, decryptData, encryptData, decryptEntry, encryptEntry } from '../../encryption/crypto';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { ThemedText } from '../../components/themed-text';
 import { ThemedView } from '../../components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { decryptData, decryptEntry, deriveKey, encryptData, encryptEntry } from '../../encryption/crypto';
+import { getCachedSupabaseClient } from '../../services/supabase';
+import { useAppStore } from '../../store/appStore';
 
 export default function ControlScreen() {
   const session = useAppStore((state) => state.session);
@@ -235,7 +234,7 @@ export default function ControlScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
         {/* Header */}
         <View style={styles.header}>
@@ -361,7 +360,7 @@ export default function ControlScreen() {
         onRequestClose={() => setShowPasswordModal(false)}
       >
         <ThemedView style={styles.modalContainer}>
-          <ScrollView contentContainerStyle={styles.modalScroll} keyboardShouldPersistTaps="handled">
+          <ScrollView contentContainerStyle={styles.modalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <View style={styles.modalHeader}>
               <ThemedText type="title" style={styles.modalTitle}>
                 Key Rotation Wizard

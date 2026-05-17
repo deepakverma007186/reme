@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import { Spacing } from '@/constants/theme';
+import { useState } from 'react';
 import {
-  StyleSheet,
-  View,
-  TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { getCachedSupabaseClient } from '../../services/supabase';
-import { useAppStore } from '../../store/appStore';
-import { deriveKey, encryptData } from '../../encryption/crypto';
 import { ThemedText } from '../../components/themed-text';
 import { ThemedView } from '../../components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { deriveKey, encryptData } from '../../encryption/crypto';
+import { getCachedSupabaseClient } from '../../services/supabase';
+import { useAppStore } from '../../store/appStore';
 
 export default function AuthScreen() {
   const showToast = useAppStore((state) => state.showToast);
@@ -138,6 +138,7 @@ export default function AuthScreen() {
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>

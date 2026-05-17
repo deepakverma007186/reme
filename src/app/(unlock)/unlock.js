@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import { Spacing } from '@/constants/theme';
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
+import { useEffect, useState } from 'react';
 import {
-  StyleSheet,
-  View,
-  TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import * as LocalAuthentication from 'expo-local-authentication';
-import * as SecureStore from 'expo-secure-store';
-import { getCachedSupabaseClient } from '../../services/supabase';
-import { useAppStore } from '../../store/appStore';
-import { deriveKey, decryptData } from '../../encryption/crypto';
 import { ThemedText } from '../../components/themed-text';
 import { ThemedView } from '../../components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { decryptData, deriveKey } from '../../encryption/crypto';
+import { getCachedSupabaseClient } from '../../services/supabase';
+import { useAppStore } from '../../store/appStore';
 
 export default function UnlockScreen() {
   const session = useAppStore((state) => state.session);
@@ -150,6 +150,7 @@ export default function UnlockScreen() {
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>

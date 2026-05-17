@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import { Spacing } from '@/constants/theme';
+import { createClient } from '@supabase/supabase-js';
+import * as Clipboard from 'expo-clipboard';
+import { useState } from 'react';
 import {
-  StyleSheet,
-  View,
-  TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
-import { createClient } from '@supabase/supabase-js';
-import { useAppStore } from '../../store/appStore';
 import { ThemedText } from '../../components/themed-text';
 import { ThemedView } from '../../components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { useAppStore } from '../../store/appStore';
 
 export default function SetupScreen() {
   const saveSupabaseConfig = useAppStore((state) => state.saveSupabaseConfig);
@@ -107,6 +107,7 @@ export default function SetupScreen() {
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
