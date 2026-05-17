@@ -1,28 +1,28 @@
-import React, { useState, useMemo, useRef } from 'react';
+import { FlashList } from '@shopify/flash-list';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Clipboard from 'expo-clipboard';
+import { useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
   StyleSheet,
-  View,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
-  Modal,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
+  View,
 } from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FlashList } from '@shopify/flash-list';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
-import * as Clipboard from 'expo-clipboard';
 import { z } from 'zod';
 
-import { useAppStore } from '../../store/appStore';
-import { getCachedSupabaseClient } from '../../services/supabase';
-import { decryptEntry, encryptEntry } from '../../encryption/crypto';
+import { Spacing } from '@/constants/theme';
 import { ThemedText } from '../../components/themed-text';
 import { ThemedView } from '../../components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { decryptEntry, encryptEntry } from '../../encryption/crypto';
+import { getCachedSupabaseClient } from '../../services/supabase';
+import { useAppStore } from '../../store/appStore';
 
 const SQL_SCHEMA = `-- ReMe (BYOB Encrypted Password Vault) SQL Schema Definition
 -- Run this in your Supabase SQL Editor to prepare your database.
