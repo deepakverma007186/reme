@@ -550,8 +550,8 @@ export default function VaultScreen() {
                   showToast(`Connection error: ${testError.message}`, 'error');
                 } else {
                   showToast('Database table verified and synced!', 'success');
-                  // Trigger React Query refetch now that we know the table exists
-                  refetch();
+                  // Reset query state immediately to clear the table error and show the loader
+                  queryClient.resetQueries({ queryKey: ['vault_entries'] });
                 }
               } catch (err) {
                 console.error('Verification query failed:', err);
