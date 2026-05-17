@@ -24,6 +24,95 @@ import { ThemedText } from '../../components/themed-text';
 import { ThemedView } from '../../components/themed-view';
 import { Spacing } from '@/constants/theme';
 
+const SQL_SCHEMA = `-- ReMe (BYOB Encrypted Password Vault) SQL Schema Definition
+-- Run this in your Supabase SQL Editor to prepare your database.
+
+-- Enable UUID extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create vault_entries table
+CREATE TABLE IF NOT EXISTS vault_entries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    entry_type TEXT NOT NULL CHECK (entry_type IN ('password', 'card', 'document')),
+    
+    -- Encrypted sensitive data (stored as "iv:ciphertext" strings)
+    -- Password entry fields
+    login_username TEXT,
+    login_email TEXT,
+    login_phone TEXT,
+    login_password TEXT,
+    
+    -- Card entry fields
+    card_name TEXT,
+    card_number TEXT,
+    card_expiry TEXT,
+    card_cvv TEXT,
+    card_pin TEXT,
+    
+    -- Document entry fields
+    doc_full_name TEXT,
+    doc_number TEXT,
+    doc_issue_date TEXT,
+    doc_expiry_date TEXT,
+    
+    -- Common fields
+    notes TEXT,
+    website TEXT, -- Plaintext website metadata for convenient launching
+    
+    -- Searchable/Metadata fields
+    is_archived BOOLEAN NOT NULL DEFAULT false,
+    is_deleted BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE vault_entries ENABLE ROW LEVEL SECURITY;
+
+-- Create Performance Indexes
+CREATE INDEX IF NOT EXISTS idx_user_id ON vault_entries(user_id);
+CREATE INDEX IF NOT EXISTS idx_deleted ON vault_entries(is_deleted);
+CREATE INDEX IF NOT EXISTS idx_archived ON vault_entries(is_archived);
+CREATE INDEX IF NOT EXISTS idx_updated_at ON vault_entries(updated_at DESC);
+
+-- RLS Policies: Ensure users can ONLY interact with their own rows
+CREATE POLICY "Users can only SELECT their own vault entries"
+ON vault_entries FOR SELECT
+TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can only INSERT their own vault entries"
+ON vault_entries FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can only UPDATE their own vault entries"
+ON vault_entries FOR UPDATE
+TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can only DELETE their own vault entries"
+ON vault_entries FOR DELETE
+TO authenticated
+USING (auth.uid() = user_id);
+
+-- Update Trigger: Auto-update the updated_at timestamp when a row is edited
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = timezone('utc'::text, now());
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+DROP TRIGGER IF EXISTS trigger_update_vault_entries_updated_at ON vault_entries;
+CREATE TRIGGER trigger_update_vault_entries_updated_at
+BEFORE UPDATE ON vault_entries
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();`;
+
 // --- ZOD SCHEMAS FOR VAULT VALIDATION ---
 const passwordSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -104,7 +193,7 @@ export default function VaultScreen() {
   const swipeableRefs = useRef(new Map());
 
   // Fetch encrypted entries from Supabase
-  const { data: encryptedEntries = [], isLoading, refetch } = useQuery({
+  const { data: encryptedEntries = [], isLoading, error, refetch } = useQuery({
     queryKey: ['vault_entries'],
     queryFn: async () => {
       const supabase = getCachedSupabaseClient();
@@ -412,6 +501,87 @@ export default function VaultScreen() {
       {isLoading ? (
         <View style={styles.loader}>
           <ActivityIndicator color="#0A84FF" size="large" />
+        </View>
+      ) : error && (error.code === 'PGRST205' || String(error.message).includes('vault_entries')) ? (
+        <View style={styles.errorContainer}>
+          <ThemedText style={styles.errorIcon}>⚠️</ThemedText>
+          <ThemedText type="title" style={styles.errorTitle}>
+            Database Table Missing
+          </ThemedText>
+          <ThemedText type="small" style={styles.errorSubtitle}>
+            Your Supabase project is configured, but the database table 'vault_entries' does not exist yet.
+          </ThemedText>
+          <TouchableOpacity
+            style={styles.copySqlBtn}
+            onPress={async () => {
+              try {
+                await Clipboard.setStringAsync(SQL_SCHEMA);
+                showToast('SQL Schema copied to clipboard!', 'success');
+              } catch (err) {
+                showToast('Failed to copy', 'error');
+              }
+            }}
+          >
+            <ThemedText type="smallBold" style={styles.copySqlBtnText}>
+              📋 Copy SQL Schema Script
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.verifyBtn}
+            onPress={async () => {
+              showToast('Verifying database structure...', 'info');
+              try {
+                const supabase = getCachedSupabaseClient();
+                if (!supabase) {
+                  showToast('Supabase client not initialized.', 'error');
+                  return;
+                }
+
+                // Force a direct, low-level Supabase query to bypass all React Query caches/retries
+                const { error: testError } = await supabase
+                  .from('vault_entries')
+                  .select('id')
+                  .limit(1);
+
+                if (testError && (testError.code === 'PGRST205' || String(testError.message).includes('vault_entries'))) {
+                  showToast("Table still missing. Please run the SQL script in Supabase first.", 'error');
+                } else if (testError) {
+                  showToast(`Connection error: ${testError.message}`, 'error');
+                } else {
+                  showToast('Database table verified and synced!', 'success');
+                  // Trigger React Query refetch now that we know the table exists
+                  refetch();
+                }
+              } catch (err) {
+                console.error('Verification query failed:', err);
+                showToast('Failed to check database', 'error');
+              }
+            }}
+          >
+            <ThemedText type="smallBold" style={styles.verifyBtnText}>
+              🔄 Verify & Sync
+            </ThemedText>
+          </TouchableOpacity>
+
+          <ThemedText type="small" style={styles.errorHelpText}>
+            Copy the script, open your Supabase Dashboard SQL Editor, paste it, and click "Run" before verifying.
+          </ThemedText>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <ThemedText style={styles.errorIcon}>⚠️</ThemedText>
+          <ThemedText type="title" style={styles.errorTitle}>
+            Sync Failed
+          </ThemedText>
+          <ThemedText type="small" style={styles.errorSubtitle}>
+            {error.message || 'An error occurred while connecting to Supabase.'}
+          </ThemedText>
+          <TouchableOpacity style={styles.retryBtn} onPress={refetch}>
+            <ThemedText type="smallBold" style={styles.retryBtnText}>
+              🔄 Retry Connection
+            </ThemedText>
+          </TouchableOpacity>
         </View>
       ) : filteredEntries.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -910,6 +1080,74 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     color: '#60646C',
     textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.five,
+  },
+  errorIcon: {
+    fontSize: 54,
+    marginBottom: Spacing.two,
+  },
+  errorTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: Spacing.one,
+  },
+  errorSubtitle: {
+    color: '#B0B4BA',
+    textAlign: 'center',
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: Spacing.four,
+  },
+  copySqlBtn: {
+    backgroundColor: '#1C1C1E',
+    borderWidth: 1,
+    borderColor: '#0A84FF',
+    borderRadius: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+    marginBottom: Spacing.two,
+    width: '85%',
+    alignItems: 'center',
+  },
+  copySqlBtnText: {
+    color: '#0A84FF',
+    fontSize: 13,
+  },
+  verifyBtn: {
+    backgroundColor: '#0A84FF',
+    borderRadius: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+    marginBottom: Spacing.three,
+    width: '85%',
+    alignItems: 'center',
+  },
+  verifyBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+  },
+  errorHelpText: {
+    color: '#60646C',
+    textAlign: 'center',
+    fontSize: 11,
+    paddingHorizontal: Spacing.three,
+    lineHeight: 15,
+  },
+  retryBtn: {
+    backgroundColor: '#0A84FF',
+    borderRadius: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+  },
+  retryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
   },
   entryCard: {
     flexDirection: 'row',
