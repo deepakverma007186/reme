@@ -1,3 +1,4 @@
+import NetInfo from '@react-native-community/netinfo';
 import { z } from 'zod';
 
 export const SQL_SCHEMA = `-- ReMe (BYOB Encrypted Password Vault) SQL Schema Definition
@@ -177,8 +178,8 @@ export const formatCardExpiry = (text) => {
 // Check if user has an active internet connection
 export const checkOnline = async () => {
   try {
-    const res = await fetch('https://www.google.com', { method: 'HEAD', cache: 'no-store' });
-    return res.ok;
+    const state = await NetInfo.fetch();
+    return !!(state.isConnected && state.isInternetReachable !== false);
   } catch (e) {
     return false;
   }

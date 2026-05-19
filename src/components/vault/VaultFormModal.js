@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import NetInfo from '@react-native-community/netinfo';
 import { Spacing } from '@/constants/theme';
 import {
   ActivityIndicator,
@@ -40,6 +41,14 @@ export default function VaultFormModal({
   onCopySecureValue,
 }) {
   const [previewImageUri, setPreviewImageUri] = useState(null);
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOnline(!!(state.isConnected && state.isInternetReachable !== false));
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handlePickImage = async (index, useCamera) => {
     try {
@@ -124,14 +133,23 @@ export default function VaultFormModal({
               <ThemedText type="smallBold" style={styles.navTitle}>
                 {editEntryId ? 'EDIT RECORD' : `NEW ${formType?.toUpperCase()}`}
               </ThemedText>
-              <TouchableOpacity onPress={onSave} disabled={isPending}>
+              <TouchableOpacity onPress={onSave} disabled={isPending || !isOnline}>
                 {isPending ? (
                   <ActivityIndicator color="#0A84FF" size="small" />
                 ) : (
-                  <ThemedText type="smallBold" style={styles.navSaveBtn}>Save</ThemedText>
+                  <ThemedText type="smallBold" style={[styles.navSaveBtn, !isOnline && styles.navSaveBtnDisabled]}>Save</ThemedText>
                 )}
               </TouchableOpacity>
             </View>
+
+            {/* Offline Alert Banner */}
+            {!isOnline && (
+              <View style={styles.offlineBanner}>
+                <ThemedText style={styles.offlineBannerText}>
+                  ⚠️ Offline — saves are disabled to protect sync
+                </ThemedText>
+              </View>
+            )}
 
             <ScrollView contentContainerStyle={styles.formScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {/* Form Title (Common for all types) */}
@@ -599,6 +617,23 @@ const styles = StyleSheet.create({
   navTitle: {
     color: '#FFFFFF',
     fontSize: 15,
+  },
+  navSaveBtnDisabled: {
+    color: '#2E3135',
+  },
+  offlineBanner: {
+    backgroundColor: '#FF453A22',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 69, 58, 0.25)',
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  offlineBannerText: {
+    color: '#FF453A',
+    fontSize: 13,
+    fontWeight: '600',
   },
   formScroll: {
     padding: Spacing.four,

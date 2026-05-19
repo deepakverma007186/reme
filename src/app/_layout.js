@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import NetInfo from '@react-native-community/netinfo';
+import { useEffect, useRef } from 'react';
 import { AppState, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -53,11 +54,35 @@ function AppContent() {
   const vaultUnlocked = useAppStore((state) => state.vaultUnlocked);
   const supabaseUrl = useAppStore((state) => state.supabaseUrl);
   const supabaseAnonKey = useAppStore((state) => state.supabaseAnonKey);
+  const showToast = useAppStore((state) => state.showToast);
 
   // 1. Initialize store from SecureStore on startup
   useEffect(() => {
     initStore();
   }, []);
+
+  // 1.5. Listen to network connectivity changes
+  const isFirstTime = useRef(true);
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const isOnline = !!(state.isConnected && state.isInternetReachable !== false);
+      if (isFirstTime.current) {
+        isFirstTime.current = false;
+        if (!isOnline) {
+          showToast('Offline mode. Vault saves will be locked.', 'error');
+        }
+        return;
+      }
+
+      if (isOnline) {
+        showToast('Back online! Syncing...', 'success');
+      } else {
+        showToast('Network disconnected. Offline mode activated.', 'error');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [showToast]);
 
   // 2. Setup Supabase authentication change listeners
   useEffect(() => {
