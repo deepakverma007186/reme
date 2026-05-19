@@ -286,7 +286,7 @@ export default function VaultScreen() {
   const handleOpenCreateForm = (type) => {
     resetForm();
     setFormType(type);
-    setFormData({ entry_type: type });
+    setFormData({ id: generateUUID(), entry_type: type });
     setShowFABSheet(false);
     setShowFormModal(true);
   };
@@ -368,7 +368,7 @@ export default function VaultScreen() {
       await ensureStorageBucket();
 
       // Ensure stable UUID before storage/DB operations
-      const entryId = editEntryId || generateUUID();
+      const entryId = editEntryId || formData.id || generateUUID();
       finalFormData.id = entryId;
 
       const userId = useAppStore.getState().session?.user?.id;
