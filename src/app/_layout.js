@@ -123,7 +123,10 @@ function AppContent() {
   useEffect(() => {
     const handleAppStateChange = (nextAppState) => {
       if (nextAppState === 'background' || nextAppState === 'inactive') {
-        lockVault();
+        const isPickerActive = useAppStore.getState().isSystemPickerActive;
+        if (!isPickerActive) {
+          lockVault();
+        }
       }
     };
 

@@ -14,7 +14,7 @@ import {
 import { Spacing } from '@/constants/theme';
 import { ThemedText } from '../../components/themed-text';
 import { ThemedView } from '../../components/themed-view';
-import { decryptEntry, encryptEntry } from '../../encryption/crypto';
+import { decryptData, decryptEntry, encryptData, encryptEntry } from '../../encryption/crypto';
 import { getCachedSupabaseClient } from '../../services/supabase';
 import { useAppStore } from '../../store/appStore';
 
@@ -68,6 +68,86 @@ export default function VaultScreen() {
   const [isSecurePass, setIsSecurePass] = useState(true);
   const [isSecureCVV, setIsSecureCVV] = useState(true);
   const [isSecurePIN, setIsSecurePIN] = useState(true);
+
+  // --- IMAGE MANAGEMENT & CRYPTO STORAGE HELPERS ---
+  const [isSaving, setIsSaving] = useState(false);
+
+  const generateUUID = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
+  const ensureStorageBucket = async () => {
+    try {
+      const supabase = getCachedSupabaseClient();
+      if (!supabase) return;
+      
+      const { error } = await supabase.storage.createBucket('vault_files', {
+        public: false,
+      });
+      
+      if (error && error.message !== 'Bucket already exists') {
+        console.warn('Bucket initialization status:', error.message);
+      }
+    } catch (err) {
+      console.warn('Storage bucket check skipped:', err);
+    }
+  };
+
+  const downloadAndDecryptImages = async (imagesArray, entryId) => {
+    if (!imagesArray || imagesArray.length === 0) return;
+    
+    const supabase = getCachedSupabaseClient();
+    if (!supabase) return;
+    
+    try {
+      const updatedImages = await Promise.all(imagesArray.map(async (img) => {
+        if (img.decryptedUri || !img.storagePath) return img;
+        
+        try {
+          const { data, error } = await supabase.storage
+            .from('vault_files')
+            .download(img.storagePath);
+            
+          if (error) {
+            console.error('Error downloading file:', error);
+            return img;
+          }
+          
+          // Safely read downloaded Blob as text across all React Native environments
+          const encryptedText = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsText(data);
+          });
+          
+          const decryptedBase64 = decryptData(encryptedText, masterKey);
+          
+          if (decryptedBase64 && !decryptedBase64.startsWith('[Decryption Error]')) {
+            return {
+              ...img,
+              decryptedUri: `data:image/jpeg;base64,${decryptedBase64}`,
+            };
+          }
+        } catch (err) {
+          console.error('Failed to decrypt image page:', img.label, err);
+        }
+        return img;
+      }));
+      
+      setFormData((prev) => {
+        if (prev.id === entryId) {
+          return { ...prev, doc_images: updatedImages };
+        }
+        return prev;
+      });
+    } catch (err) {
+      console.error('downloadAndDecryptImages failed:', err);
+    }
+  };
 
   // Reference trackers for closing swiped rows
   const swipeableRefs = useRef(new Map());
@@ -215,8 +295,29 @@ export default function VaultScreen() {
     resetForm();
     setFormType(entry.entry_type);
     setEditEntryId(entry.id);
-    setFormData(entry);
+
+    let parsedImages = [];
+    if (entry.doc_images) {
+      try {
+        parsedImages = typeof entry.doc_images === 'string'
+          ? JSON.parse(entry.doc_images)
+          : entry.doc_images || [];
+      } catch (e) {
+        console.error('Failed to parse doc_images:', e);
+      }
+    }
+
+    const entryWithParsedImages = {
+      ...entry,
+      doc_images: parsedImages,
+    };
+
+    setFormData(entryWithParsedImages);
     setShowFormModal(true);
+
+    if (parsedImages.length > 0) {
+      downloadAndDecryptImages(parsedImages, entry.id);
+    }
   };
 
   const handleFieldChange = (field, val) => {
@@ -248,10 +349,126 @@ export default function VaultScreen() {
       return;
     }
 
-    // Online check and perform write
-    executeWithOnlineGuard(() => {
-      saveMutation.mutate(formData);
-    });
+    setIsSaving(true);
+
+    const isOnline = await checkOnline();
+    if (!isOnline) {
+      showToast('Offline. Save blocked to protect vault sync.', 'error');
+      setIsSaving(false);
+      return;
+    }
+
+    try {
+      const supabase = getCachedSupabaseClient();
+      if (!supabase) throw new Error('Client uninitialized');
+
+      let finalFormData = { ...formData };
+
+      // Initialize bucket if needed
+      await ensureStorageBucket();
+
+      // Ensure stable UUID before storage/DB operations
+      const entryId = editEntryId || generateUUID();
+      finalFormData.id = entryId;
+
+      const userId = useAppStore.getState().session?.user?.id;
+
+      if (formType === 'document') {
+        const currentImages = Array.isArray(formData.doc_images) ? formData.doc_images : [];
+
+        // 1. Delete removed images from storage
+        let previousImages = [];
+        if (editEntryId) {
+          const originalEntry = encryptedEntries.find((e) => e.id === editEntryId);
+          if (originalEntry && originalEntry.doc_images) {
+            try {
+              const decryptedEntry = decryptEntry(originalEntry, masterKey);
+              previousImages = typeof decryptedEntry.doc_images === 'string'
+                ? JSON.parse(decryptedEntry.doc_images)
+                : decryptedEntry.doc_images || [];
+            } catch (e) {
+              console.error('Failed to parse previous images for deletion:', e);
+            }
+          }
+        }
+
+        const removedImages = previousImages.filter(
+          (prevImg) => prevImg.storagePath && !currentImages.some((currImg) => currImg.storagePath === prevImg.storagePath)
+        );
+
+        if (removedImages.length > 0) {
+          const pathsToDelete = removedImages.map((img) => img.storagePath);
+          await supabase.storage.from('vault_files').remove(pathsToDelete);
+        }
+
+        // 2. Upload newly picked images
+        const uploadedImages = await Promise.all(
+          currentImages.map(async (img) => {
+            if (!img.isNew) return img;
+
+            try {
+              const imageId = img.id || generateUUID();
+              const storagePath = `vault-images/${userId}/${entryId}/${imageId}.enc`;
+
+              // Read file as base64
+              const localResponse = await fetch(img.uri);
+              const localBlob = await localResponse.blob();
+
+              const base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(localBlob);
+              });
+
+              // Encrypt base64 string client-side
+              const encryptedText = encryptData(base64Data, masterKey);
+
+              // Safely convert ASCII string (hex representation) to Uint8Array for flawless React Native upload
+              const uploadData = new Uint8Array(encryptedText.length);
+              for (let i = 0; i < encryptedText.length; i++) {
+                uploadData[i] = encryptedText.charCodeAt(i);
+              }
+
+              const { error: uploadError } = await supabase.storage
+                .from('vault_files')
+                .upload(storagePath, uploadData, {
+                  contentType: 'text/plain',
+                  upsert: true,
+                });
+
+              if (uploadError) throw uploadError;
+
+              return {
+                id: imageId,
+                label: img.label,
+                storagePath,
+              };
+            } catch (err) {
+              console.error('Failed to upload image page:', img.label, err);
+              throw new Error(`Failed to upload image page: ${img.label}`);
+            }
+          })
+        );
+
+        // Clean arrays and serialize to JSON metadata string
+        const cleanedImages = uploadedImages.map((img) => ({
+          id: img.id,
+          label: img.label,
+          storagePath: img.storagePath,
+        }));
+
+        finalFormData.doc_images = JSON.stringify(cleanedImages);
+      }
+
+      // 3. Mutate standard payload into db
+      saveMutation.mutate(finalFormData);
+    } catch (err) {
+      console.error('Error preparing form images:', err);
+      showToast(err.message || 'Failed to save vault record', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // --- SWIPE ACTIONS ---
@@ -350,6 +567,10 @@ export default function VaultScreen() {
       } else {
         showToast('Database table verified and synced!', 'success');
         setIsTableVerified(true); // Set table as verified so the warning screen is permanently disabled
+        
+        // Dynamic zero-knowledge storage bucket initialization
+        await ensureStorageBucket();
+
         // Immediately seed an empty array to clear the error state and show the welcoming empty state instantly
         queryClient.setQueryData(['vault_entries'], []);
         queryClient.invalidateQueries({ queryKey: ['vault_entries'] });
@@ -423,7 +644,7 @@ export default function VaultScreen() {
         editEntryId={editEntryId}
         formData={formData}
         formErrors={formErrors}
-        isPending={saveMutation.isPending}
+        isPending={saveMutation.isPending || isSaving}
         isSecurePass={isSecurePass}
         isSecureCVV={isSecureCVV}
         isSecurePIN={isSecurePIN}

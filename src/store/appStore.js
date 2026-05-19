@@ -19,6 +19,7 @@ export const useAppStore = create((set, get) => ({
   // Vault Security States (NEVER persisted to disk in plain text!)
   vaultUnlocked: false,
   masterKey: null, // Hex string derived key in-memory
+  isSystemPickerActive: false, // Flag to bypass auto-lock when using system camera/gallery
 
   // Settings & Preferences
   biometricsEnabled: false,
@@ -137,6 +138,10 @@ export const useAppStore = create((set, get) => ({
       vaultUnlocked: false,
       masterKey: null,
     });
+  },
+
+  setSystemPickerActive: (active) => {
+    set({ isSystemPickerActive: active });
   },
 
   // Biometrics Preference Operations

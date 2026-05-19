@@ -87,7 +87,7 @@ export function decryptData(ciphertextWithIv, hexKey) {
 const SENSITIVE_FIELDS = {
   password: ['login_username', 'login_email', 'login_phone', 'login_password', 'notes'],
   card: ['card_name', 'card_number', 'card_expiry', 'card_cvv', 'card_pin', 'notes'],
-  document: ['doc_full_name', 'doc_number', 'doc_issue_date', 'doc_expiry_date', 'notes'],
+  document: ['doc_full_name', 'doc_number', 'doc_issue_date', 'doc_expiry_date', 'doc_images', 'notes'],
 };
 
 /**

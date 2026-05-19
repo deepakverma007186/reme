@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS vault_entries (
     doc_number TEXT,
     doc_issue_date TEXT,
     doc_expiry_date TEXT,
+    doc_images TEXT,
     
     -- Common fields
     notes TEXT,
@@ -87,7 +88,47 @@ DROP TRIGGER IF EXISTS trigger_update_vault_entries_updated_at ON vault_entries;
 CREATE TRIGGER trigger_update_vault_entries_updated_at
 BEFORE UPDATE ON vault_entries
 FOR EACH ROW
-EXECUTE FUNCTION update_updated_at_column();`;
+EXECUTE FUNCTION update_updated_at_column();
+
+-- ==========================================================
+-- STORAGE BUCKETS & RLS POLICIES FOR VAULT IMAGES
+-- ==========================================================
+
+-- 1. Create the private storage bucket if it doesn't exist
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('vault_files', 'vault_files', false)
+ON CONFLICT (id) DO NOTHING;
+
+-- 2. Enable Row Level Security on storage.objects
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
+-- 3. Policy: Allow users to SELECT their own encrypted document images
+DROP POLICY IF EXISTS "Users can select their own vault images" ON storage.objects;
+CREATE POLICY "Users can select their own vault images"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (bucket_id = 'vault_files' AND name LIKE 'vault-images/' || auth.uid()::text || '/%');
+
+-- 4. Policy: Allow users to INSERT their own encrypted document images
+DROP POLICY IF EXISTS "Users can insert their own vault images" ON storage.objects;
+CREATE POLICY "Users can insert their own vault images"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'vault_files' AND name LIKE 'vault-images/' || auth.uid()::text || '/%');
+
+-- 5. Policy: Allow users to UPDATE their own encrypted document images
+DROP POLICY IF EXISTS "Users can update their own vault images" ON storage.objects;
+CREATE POLICY "Users can update their own vault images"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'vault_files' AND name LIKE 'vault-images/' || auth.uid()::text || '/%');
+
+-- 6. Policy: Allow users to DELETE their own encrypted document images
+DROP POLICY IF EXISTS "Users can delete their own vault images" ON storage.objects;
+CREATE POLICY "Users can delete their own vault images"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'vault_files' AND name LIKE 'vault-images/' || auth.uid()::text || '/%');`;
 
 // --- ZOD SCHEMAS FOR VAULT VALIDATION ---
 export const passwordSchema = z.object({
@@ -116,6 +157,7 @@ export const docSchema = z.object({
   doc_number: z.string().min(1, 'Document number is required'),
   doc_issue_date: z.string().optional(),
   doc_expiry_date: z.string().optional(),
+  doc_images: z.union([z.string(), z.array(z.any())]).optional(),
   notes: z.string().optional(),
 });
 
